@@ -1725,7 +1725,7 @@ pub const Page = struct {
         const dirty_start = alignForward(usize, cells_end, @alignOf(usize));
         const dirty_end: usize = dirty_start + (dirty_usize_length * @sizeOf(usize));
 
-        const styles_layout = style.Set.layout(cap.styles);
+        const styles_layout = style.Set.get_layout(cap.styles);
         const styles_start = alignForward(usize, dirty_end, style.Set.base_align);
         const styles_end = styles_start + styles_layout.total_size;
 
@@ -1743,7 +1743,7 @@ pub const Page = struct {
         const string_end = string_start + string_layout.total_size;
 
         const hyperlink_count = @divFloor(cap.hyperlink_bytes, @sizeOf(hyperlink.Set.Item));
-        const hyperlink_set_layout = hyperlink.Set.layout(@intCast(hyperlink_count));
+        const hyperlink_set_layout = hyperlink.Set.get_layout(@intCast(hyperlink_count));
         const hyperlink_set_start = alignForward(usize, string_end, hyperlink.Set.base_align);
         const hyperlink_set_end = hyperlink_set_start + hyperlink_set_layout.total_size;
 

@@ -27,7 +27,7 @@ const Command = @import("src/Command.zig");
 comptime {
     // This is the required Zig version for building this project. We allow
     // any patch version but the major and minor must match exactly.
-    const required_zig = "0.13.0";
+    const required_zig = "0.14.0";
 
     // Fail compilation if the current Zig version doesn't meet requirements.
     const current_vsn = builtin.zig_version;
@@ -1718,7 +1718,7 @@ fn benchSteps(
     install: bool,
 ) !void {
     // Open the directory ./src/bench
-    const c_dir_path = (comptime root()) ++ "/src/bench";
+    const c_dir_path = b.build_root.path ++ "/src/bench";
     var c_dir = try fs.cwd().openDir(c_dir_path, .{ .iterate = true });
     defer c_dir.close();
 
@@ -1772,7 +1772,7 @@ fn conformanceSteps(
     var map = std.StringHashMap(*CompileStep).init(b.allocator);
 
     // Open the directory ./conformance
-    const c_dir_path = (comptime root()) ++ "/conformance";
+    const c_dir_path = b.build_root.path ++ "/conformance";
     var c_dir = try fs.cwd().openDir(c_dir_path, .{ .iterate = true });
     defer c_dir.close();
 
@@ -1810,9 +1810,6 @@ fn conformanceSteps(
 }
 
 /// Path to the directory with the build.zig.
-fn root() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse unreachable;
-}
 
 /// ANSI escape codes for colored log output
 const color_map = std.StaticStringMap([]const u8).initComptime(.{

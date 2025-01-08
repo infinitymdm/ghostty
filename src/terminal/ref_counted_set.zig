@@ -141,7 +141,7 @@ pub fn RefCountedSet(
         ///
         /// The returned layout `cap` property will be 1 more than the number
         /// of items that the set can actually store, since ID 0 is reserved.
-        pub fn layout(cap: usize) Layout {
+        pub fn get_layout(cap: usize) Layout {
             // Experimentally, this load factor works quite well.
             const load_factor = 0.8125;
 

@@ -22,7 +22,7 @@ const Tab = @import("Tab.zig");
 const Window = @import("Window.zig");
 const ClipboardConfirmationWindow = @import("ClipboardConfirmationWindow.zig");
 const ResizeOverlay = @import("ResizeOverlay.zig");
-const inspector = @import("inspector.zig");
+const Inspector = @import("inspector.zig");
 const gtk_key = @import("key.zig");
 const c = @import("c.zig").c;
 const x11 = @import("x11.zig");
@@ -361,7 +361,7 @@ size: apprt.SurfaceSize,
 cursor_pos: apprt.CursorPos,
 
 /// Inspector state.
-inspector: ?*inspector.Inspector = null,
+inspector: ?*Inspector.Inspector = null,
 
 /// Key input states. See gtkKeyPressed for detailed descriptions.
 in_keypress: bool = false,
@@ -761,7 +761,7 @@ pub fn controlInspector(
 
     // If we already have an inspector, we don't need to show anything.
     if (self.inspector != null) return;
-    self.inspector = inspector.Inspector.create(
+    self.inspector = Inspector.Inspector.create(
         self,
         .{ .window = {} },
     ) catch |err| {

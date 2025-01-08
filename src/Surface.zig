@@ -24,7 +24,7 @@ const global_state = &@import("global.zig").state;
 const oni = @import("oniguruma");
 const crash = @import("crash/main.zig");
 const unicode = @import("unicode/main.zig");
-const renderer = @import("renderer.zig");
+const _renderer = @import("renderer.zig");
 const termio = @import("termio.zig");
 const objc = @import("objc");
 const imgui = @import("imgui");
@@ -36,13 +36,13 @@ const configpkg = @import("config.zig");
 const input = @import("input.zig");
 const App = @import("App.zig");
 const internal_os = @import("os/main.zig");
-const inspector = @import("inspector/main.zig");
+const Inspector = @import("inspector/main.zig");
 const SurfaceMouse = @import("surface_mouse.zig");
 
 const log = std.log.scoped(.surface);
 
 // The renderer implementation to use.
-const Renderer = renderer.Renderer;
+const Renderer = _renderer.Renderer;
 
 /// Allocator
 alloc: Allocator,
@@ -63,10 +63,10 @@ font_metrics: font.Metrics,
 renderer: Renderer,
 
 /// The render state
-renderer_state: renderer.State,
+renderer_state: _renderer.State,
 
 /// The renderer thread manager
-renderer_thread: renderer.Thread,
+renderer_thread: _renderer.Thread,
 
 /// The actual thread
 renderer_thr: std.Thread,
@@ -106,10 +106,10 @@ io_thread: termio.Thread,
 io_thr: std.Thread,
 
 /// Terminal inspector
-inspector: ?*inspector.Inspector = null,
+inspector: ?*Inspector.Inspector = null,
 
 /// All our sizing information.
-size: renderer.Size,
+size: _renderer.Size,
 
 /// The configuration derived from the main config. We "derive" it so that
 /// we don't have a shared pointer hanging around that we need to worry about
@@ -328,7 +328,7 @@ const DerivedConfig = struct {
         self.arena.deinit();
     }
 
-    fn scaledPadding(self: *const DerivedConfig, x_dpi: f32, y_dpi: f32) renderer.Padding {
+    fn scaledPadding(self: *const DerivedConfig, x_dpi: f32, y_dpi: f32) _renderer.Padding {
         const padding_top: u32 = padding_top: {
             const padding_top: f32 = @floatFromInt(self.window_padding_top);
             break :padding_top @intFromFloat(@floor(padding_top * y_dpi / 72));
@@ -423,8 +423,8 @@ pub fn init(
     const cell_size = font_grid.cellSize();
 
     // Build our size struct which has all the sizes we need.
-    const size: renderer.Size = size: {
-        var size: renderer.Size = .{
+    const size: _renderer.Size = size: {
+        var size: _renderer.Size = .{
             .screen = screen: {
                 const surface_size = try rt_surface.getSize();
                 break :screen .{
@@ -437,7 +437,7 @@ pub fn init(
             .padding = .{},
         };
 
-        const explicit: renderer.Padding = derived_config.scaledPadding(
+        const explicit: _renderer.Padding = derived_config.scaledPadding(
             x_dpi,
             y_dpi,
         );
@@ -467,7 +467,7 @@ pub fn init(
     errdefer alloc.destroy(mutex);
 
     // Create the renderer thread
-    var render_thread = try renderer.Thread.init(
+    var render_thread = try _renderer.Thread.init(
         alloc,
         config,
         rt_surface,
@@ -595,7 +595,7 @@ pub fn init(
     // Start our renderer thread
     self.renderer_thr = try std.Thread.spawn(
         .{},
-        renderer.Thread.threadMain,
+        _renderer.Thread.threadMain,
         .{&self.renderer_thread},
     );
     self.renderer_thr.setName("renderer") catch {};
@@ -743,9 +743,9 @@ pub fn activateInspector(self: *Surface) !void {
     if (self.inspector != null) return;
 
     // Setup the inspector
-    const ptr = try self.alloc.create(inspector.Inspector);
+    const ptr = try self.alloc.create(Inspector.Inspector);
     errdefer self.alloc.destroy(ptr);
-    ptr.* = try inspector.Inspector.init(self);
+    ptr.* = try Inspector.Inspector.init(self);
     self.inspector = ptr;
 
     // Put the inspector onto the render state
@@ -1095,7 +1095,7 @@ fn mouseRefreshLinks(
 }
 
 /// Called when our renderer health state changes.
-fn updateRendererHealth(self: *Surface, health: renderer.Health) void {
+fn updateRendererHealth(self: *Surface, health: _renderer.Health) void {
     log.warn("renderer health status change status={}", .{health});
     self.rt_app.performAction(
         .{ .surface = self },
@@ -1168,7 +1168,7 @@ pub fn updateConfig(
 
     // We need to store our configs in a heap-allocated pointer so that
     // our messages aren't huge.
-    var renderer_message = try renderer.Message.initChangeConfig(self.alloc, config);
+    var renderer_message = try _renderer.Message.initChangeConfig(self.alloc, config);
     errdefer renderer_message.deinit();
     var termio_config_ptr = try self.alloc.create(termio.Termio.DerivedConfig);
     errdefer self.alloc.destroy(termio_config_ptr);
@@ -1455,7 +1455,7 @@ fn setSelection(self: *Surface, sel_: ?terminal.Selection) !void {
 
 /// Change the cell size for the terminal grid. This can happen as
 /// a result of changing the font size at runtime.
-fn setCellSize(self: *Surface, size: renderer.CellSize) !void {
+fn setCellSize(self: *Surface, size: _renderer.CellSize) !void {
     // Update our cell size within our size struct
     self.size.cell = size;
     self.balancePaddingIfNeeded();
@@ -1524,7 +1524,7 @@ pub fn sizeCallback(self: *Surface, size: apprt.SurfaceSize) !void {
     crash.sentry.thread_state = self.crashThreadState();
     defer crash.sentry.thread_state = null;
 
-    const new_screen_size: renderer.ScreenSize = .{
+    const new_screen_size: _renderer.ScreenSize = .{
         .width = size.width,
         .height = size.height,
     };
@@ -1537,7 +1537,7 @@ pub fn sizeCallback(self: *Surface, size: apprt.SurfaceSize) !void {
     try self.resize(new_screen_size);
 }
 
-fn resize(self: *Surface, size: renderer.ScreenSize) !void {
+fn resize(self: *Surface, size: _renderer.ScreenSize) !void {
     // Save our screen size
     self.size.screen = size;
     self.balancePaddingIfNeeded();
@@ -1609,7 +1609,7 @@ pub fn preeditCallback(self: *Surface, preedit_: ?[]const u8) !void {
     var it = view.iterator();
 
     // Allocate the codepoints slice
-    const Codepoint = renderer.State.Preedit.Codepoint;
+    const Codepoint = _renderer.State.Preedit.Codepoint;
     var codepoints: std.ArrayListUnmanaged(Codepoint) = .{};
     defer codepoints.deinit(self.alloc);
     while (it.nextCodepoint()) |cp| {
@@ -1651,7 +1651,7 @@ pub fn keyCallback(
     defer crash.sentry.thread_state = null;
 
     // Setup our inspector event if we have an inspector.
-    var insp_ev: ?inspector.key.Event = if (self.inspector != null) ev: {
+    var insp_ev: ?Inspector.key.Event = if (self.inspector != null) ev: {
         var copy = event;
         copy.utf8 = "";
         if (event.utf8.len > 0) copy.utf8 = try self.alloc.dupe(u8, event.utf8);
@@ -1815,7 +1815,7 @@ pub fn keyCallback(
 fn maybeHandleBinding(
     self: *Surface,
     event: input.KeyEvent,
-    insp_ev: ?*inspector.key.Event,
+    insp_ev: ?*Inspector.key.Event,
 ) !?InputEffect {
     switch (event.action) {
         // Release events never trigger a binding but we need to check if
@@ -2011,7 +2011,7 @@ fn endKeySequence(
 fn encodeKey(
     self: *Surface,
     event: input.KeyEvent,
-    insp_ev: ?*inspector.key.Event,
+    insp_ev: ?*Inspector.key.Event,
 ) !?termio.Message.WriteReq {
     // Build up our encoder. Under different modes and
     // inputs there are many keybindings that result in no encoding
@@ -2652,7 +2652,7 @@ fn mouseReport(
             const final: u8 = if (action == .release) 'm' else 'M';
 
             // The position has to be adjusted to the terminal space.
-            const coord: renderer.Coordinate.Terminal = (renderer.Coordinate{
+            const coord: _renderer.Coordinate.Terminal = (_renderer.Coordinate{
                 .surface = .{
                     .x = pos.x,
                     .y = pos.y,
@@ -3723,7 +3723,7 @@ pub fn colorSchemeCallback(self: *Surface, scheme: apprt.ColorScheme) !void {
 
 pub fn posToViewport(self: Surface, xpos: f64, ypos: f64) terminal.point.Coordinate {
     // Get our grid cell
-    const coord: renderer.Coordinate = .{ .surface = .{ .x = xpos, .y = ypos } };
+    const coord: _renderer.Coordinate = .{ .surface = .{ .x = xpos, .y = ypos } };
     const grid = coord.convert(.grid, self.size).grid;
     return .{ .x = grid.x, .y = grid.y };
 }

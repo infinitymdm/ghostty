@@ -234,10 +234,10 @@ test "encode" {
 
     const expected =
         \\ghostty|xterm-ghostty|Ghostty,
-        \\	am,
-        \\	ccc@,
-        \\	colors#256,
-        \\	bel=^G,
+        \\    am,
+        \\    ccc@,
+        \\    colors#256,
+        \\    bel=^G,
         \\
     ;
     try std.testing.expectEqualStrings(@as([]const u8, expected), buf_stream.getWritten());
